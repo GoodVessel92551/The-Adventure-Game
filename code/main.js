@@ -1,20 +1,20 @@
 import kaboom from "kaboom"
 
 kaboom({
-    background: [0, 100, 150]
+    background: [0, 73, 150]
 })
 var quest
 var quest_done = true
 var quests = ["Fall into the void", "Open a chest", "Get 10 loot", "Jump 10 Times"]
-var next_quests = [["Fall into the void", "Open a chest", "Get 10 loot", "Jump 10 Times"],["Open 2 chests","Get 20 loot","Find the mystery box"],["Use TNT","Touch the bed","Jump 20 times"]]
+var next_quests = [["Fall into the void", "Open a chest", "Get 10 loot", "Jump 10 Times"], ["Open 2 chests", "Get 20 loot", "Find the mystery box"], ["Use TNT", "Touch the bed", "Jump 20 times"]]
 var loot = 0
 var chest_open = 0
-var tnt = 2
+var tnt = 0
 loadSprite("grass", "sprites/grass.png")
 loadSound("boom", "sounds/boom.wav");
 loadSprite("quests", "sprites/quests.png");
 loadSprite("dirt", "sprites/dirt.png")
-loadSprite("campfire", "sprites/campfire.png");
+//loadSprite("campfire", "sprites/campfire.png");
 loadSprite("grass2", "sprites/grass2.png");
 loadSprite("bush", "sprites/bush.png");
 loadSprite("support", "sprites/support.png");
@@ -40,6 +40,17 @@ loadSprite("bean", "sprites/bean4.png", {
             to: 14,
             speed: 50,
             loop: false,
+        },
+    },
+})
+loadSprite("campfire", "sprites/camp2.png", {
+    sliceX: 4,
+    anims: {
+        "fire": {
+            from: 0,
+            to: 3,
+            speed: 1,
+            loop: true,
         },
     },
 })
@@ -73,18 +84,18 @@ const LEVELS = [
     [
         "",
         "",
-        "m mmb         === m",
+        "m mmb        ==== m",
         "======       xxxx=====        ",
         "xxxx",
         "                          ?  ",
-        "       mbc              c=====",
-        "cqo ======   112211   ===xxxxx== c",
+        "       mbc     c        c=====",
+        "cqo^======   112211   ===xxxxx== c",
         "====xx                          ===",
         "",
     ],
     [
         "",
-        "cqo      m",
+        "cqo  ^   m",
         "=2211212==/",
         "x1/    2xx",
         "x1     1xxc ===",
@@ -92,6 +103,16 @@ const LEVELS = [
         "x1112221xx        ==",
         "xxxxxxxxxxc   mm b",
         "xxxxxxxxxx=============",
+    ],
+    [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "==",
+
     ],
 ]
 scene("game", ({ levelIdx }) => {
@@ -122,7 +143,6 @@ scene("game", ({ levelIdx }) => {
             body(),
             origin("botleft"),
             "bean",
-            "tntyes",
         ],
         "x": () => [
             sprite("dirt"),
@@ -166,6 +186,7 @@ scene("game", ({ levelIdx }) => {
             solid(),
             origin("botleft"),
             "tntyes",
+            "campfire",
         ],
         "1": () => [
             sprite("wall"),
@@ -197,24 +218,28 @@ scene("game", ({ levelIdx }) => {
         ],
     })
     const bean = get("bean")[0]
+    const campfire = get("campfire")[0]
     const questbox = get("questbox")[0]
-    if (level != LEVELS.length - 1) {
-        bean.play("idle")
-    }
+    var spawn = bean.pos
+    campfire.play("fire")
+    bean.play("idle")
+
     questbox.onClick(() => {
         debug.log("Welcome to the Quest Box")
         console.log(quests)
-        if (quests.length == 0){
-            debug.log("You have done all the quest you have now been move to the next level")
+        if (quests.length == 0) {
+            debug.log("You have done all the quests you have now been moved to the next level")
             if (levelIdx < LEVELS.length - 1) {
                 level += 1
                 jump = 0
+                setData("Level", levelIdx + 1)
+                setData("Loot", loot)
                 quests = next_quests[level]
                 go("game", {
                     levelIdx: levelIdx + 1
                 })
             }
-            else{
+            else {
                 debug.log("You have finished the game")
             }
         }
@@ -234,53 +259,61 @@ scene("game", ({ levelIdx }) => {
             bean.play("idle")
         })
     })
-    bean.onCollide("bed",()=>{
-        if (quest == "Touch the bed"){
+    bean.onCollide("bed", () => {
+        if (quest == "Touch the bed") {
             questdone("Touch the bed")
         }
     })
     onClick("chest", (chest) => {
         chest.destroy()
-        loot = loot + randi(5,10+level)
+        loot = loot + randi(5, 10 + level)
         loot_text.text = "Loot: " + loot
-        if(level == 2){
+        if (level == 2) {
             tnt++
         }
         if (quest == "Open a chest") {
             questdone("Open a chest")
         }
-        else if (quest == "Open 2 chests"){
+        else if (quest == "Open 2 chests") {
             chest_open++
-            if (chest_open >= 2){
+            if (chest_open >= 2) {
                 questdone("Open 2 chests")
             }
         }
-        else if(quest == "Get 10 loot" && loot >= 10){
+        else if (quest == "Get 10 loot" && loot >= 10) {
             questdone("Get 10 loot")
         }
-        else if(quest == "Get 20 loot" && loot >= 20){
+        else if (quest == "Get 20 loot" && loot >= 20) {
             questdone("Get 20 loot")
         }
-        
+
     })
-    onKeyPress("t",() => {
-        if(tnt > 0){
+    onKeyPress("t", () => {
+        if (tnt > 0) {
             tnt--
-            if(quest == "Use TNT"){
+            if (quest == "Use TNT") {
                 questdone("Use TNT")
             }
-             add([
+            add([
                 sprite("tnt"),
                 pos(toWorld(mousePos())),
                 body(),
                 origin("botleft"),
-                area({height:32}),
+                area({ height: 32 }),
                 lifespan(10),
                 "tnt",
                 "tntyes",
             ])
-            onCollide("bean","tnt",()=>{die()})
-            onCollide("tntyes","tnt",(dirt,tnt)=>{
+            onCollide("bean", "tnt", (bean, tnt) => {
+                tnt.destroy()
+                addKaboom(tnt.pos)
+                play("boom", {
+                    volume: 10,
+                })
+                shake(1000)
+                die()
+            })
+            onCollide("tntyes", "tnt", (dirt, tnt) => {
                 dirt.destroy()
                 tnt.destroy()
                 addKaboom(tnt.pos)
@@ -293,10 +326,10 @@ scene("game", ({ levelIdx }) => {
         box.destroy()
         regCursor("default", "shovel")
         if (quest == "Find the mystery box") {
-            questdone("Find the mystery box","Your got 2 barrels of TNT use it well press T to use")
+            questdone("Find the mystery box", "You got 2 barrels of TNT use it well press T to use")
             tnt = 2
         }
-        
+
     })
 
     onKeyDown(["left", "a"], () => {
@@ -319,14 +352,15 @@ scene("game", ({ levelIdx }) => {
     onKeyDown(["up", "w", "space"], () => {
         if (bean.isGrounded()) {
             bean.jump(JUMP)
-            if(quest == "Jump 10 Times"){
+            if (quest == "Jump 10 Times") {
                 jump++
-                if (jump > 10){
+                if (jump > 10) {
                     questdone("Jump 10 Times")
-                }}
-            if(quest == "Jump 20 times"){
+                }
+            }
+            if (quest == "Jump 20 times") {
                 jump++
-                if (jump > 20){
+                if (jump > 20) {
                     questdone("Jump 20 times")
                 }
             }
@@ -339,10 +373,31 @@ scene("game", ({ levelIdx }) => {
     bean.onUpdate(() => {
         camPos(bean.pos)
         if (bean.pos.y >= FALL_DEATH) {
-            if (quest == "Fall into the void"){
+            if (quest == "Fall into the void") {
                 questdone("Fall into the void")
             }
             die()
+        }
+    })
+    const restart = add([
+        fixed(),
+        text("Restart Game"),
+        pos(20, 60),
+        scale(0.3),
+        area({ width: 550, height: 70 }),
+    ])
+    restart.onClick(() => {
+        setData("Level", 0)
+        setData("Loot", 0)
+        start()
+    })
+    restart.onUpdate(() => {
+        if (restart.isHovering()) {
+            cursor("pointer")
+            restart.color = rgb(255, 102, 0)
+        } else {
+            cursor("default")
+            restart.color = rgb()
         }
     })
     const loot_text = add([
@@ -351,34 +406,35 @@ scene("game", ({ levelIdx }) => {
         pos(20, 20),
         scale(0.5)
     ])
+    function die() {
+        loot = 0
+        loot_text.text = "Loot: 0"
+        bean.pos = spawn
+    }
 })
 
-function die() {
-    loot = 0
-    loot.text = "Loot:"+loot
-    if (level == 3){
-        tnt = 2
+
+function start() {
+    score = 0
+    level = getData("Level", 0)
+    loot = getData("Loot", 0)
+    if (loot == null) {
+        loot = 0
     }
+    quests = next_quests[level]
     go("game", {
         levelIdx: level,
     })
 }
 
-function start() {
-    score = 0
-    go("game", {
-        levelIdx: 0,
-    })
-}
-
-function questdone(a, b){
-    if (b){
-        debug.log("You did the quest!!! Go back to the quest box to get a new one."+b)
-    }else{
+function questdone(a, b) {
+    if (b) {
+        debug.log("You did the quest!!! Go back to the quest box to get a new one." + b)
+    } else {
         debug.log("You did the quest!!! Go back to the quest box to get a new one.")
     }
     i = quests.indexOf(a)
-    quests.splice(i,1)
+    quests.splice(i, 1)
     quest_done = true
     quest = ""
     console.log(quests)
