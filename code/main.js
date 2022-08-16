@@ -1,7 +1,9 @@
 import kaboom from "kaboom"
 
 kaboom({
-    background: [0, 73, 150]
+    background: [0, 73, 150],
+    canvas: document.querySelector("#kaboom"),
+    font: "sinko",
 })
 var quest
 var quest_done = true
@@ -110,8 +112,8 @@ const LEVELS = [
         "",
         "",
         "",
-        "",
-        "==",
+        "oq^",
+        "===",
 
     ],
 ]
@@ -211,7 +213,7 @@ scene("game", ({ levelIdx }) => {
         ],
         "-": () => [
             sprite("bed"),
-            area({ height: 20 }),
+            area({ height: 25 }),
             solid(),
             origin("botleft"),
             "bed",
@@ -383,8 +385,8 @@ scene("game", ({ levelIdx }) => {
         fixed(),
         text("Restart Game"),
         pos(20, 60),
-        scale(0.3),
-        area({ width: 550, height: 70 }),
+        scale(2),
+        area({ width: 100, height: 10 }),
     ])
     restart.onClick(() => {
         setData("Level", 0)
@@ -404,7 +406,7 @@ scene("game", ({ levelIdx }) => {
         fixed(),
         text("Loot: " + loot),
         pos(20, 20),
-        scale(0.5)
+        scale(4)
     ])
     function die() {
         loot = 0
@@ -418,8 +420,9 @@ function start() {
     score = 0
     level = getData("Level", 0)
     loot = getData("Loot", 0)
-    if (loot == null) {
+    if (loot == null && level == null) {
         loot = 0
+        level = 0
     }
     quests = next_quests[level]
     go("game", {
